@@ -198,10 +198,21 @@ export default function ESOPCalculator() {
   const [k401EmployeePct, setK401EmployeePct] = useState(0);
   const [k401EmployeeFixed, setK401EmployeeFixed] = useState(0);
   const [k401MatchPct, setK401MatchPct] = useState(0);
-  const [healthSemiMonthly, setHealthSemiMonthly] = useState(0); // Changed from healthHalfMonthly
-  const [otherSemiMonthly, setOtherSemiMonthly] = useState(0); // Changed from otherHalfMonthly
+  const [healthSemiMonthly, setHealthSemiMonthly] = useState(0);
+  const [otherSemiMonthly, setOtherSemiMonthly] = useState(0);
   const [filingStatus, setFilingStatus] = useState('MFJ');
   const [payFreq, setPayFreq] = useState('Monthly');
+  
+  // Spouse income (only for MFJ)
+  const [spouseBaseIncome, setSpouseBaseIncome] = useState(0);
+  const [spouseBonus, setSpouseBonus] = useState(0);
+  const [spouseUse401kPercent, setSpouseUse401kPercent] = useState(true);
+  const [spouseK401EmployeePct, setSpouseK401EmployeePct] = useState(0);
+  const [spouseK401EmployeeFixed, setSpouseK401EmployeeFixed] = useState(0);
+  const [spouseK401MatchPct, setSpouseK401MatchPct] = useState(0);
+  const [spouseHealthSemiMonthly, setSpouseHealthSemiMonthly] = useState(0);
+  const [spouseOtherSemiMonthly, setSpouseOtherSemiMonthly] = useState(0);
+  const [spousePayFreq, setSpousePayFreq] = useState('Monthly');
 
   // Constants
   const IRS_401K_LIMIT_2025 = 23500;
@@ -293,9 +304,24 @@ export default function ESOPCalculator() {
   );
   const k401Employee = use401kPercent ? derived401kByPct : Math.min(Number(k401EmployeeFixed) || 0, IRS_401K_LIMIT_2025);
 
+  // Spouse calculations (only for MFJ)
+  const spouseGrossAnnual = filingStatus === 'MFJ' ? ((Number(spouseBaseIncome) || 0) + (Number(spouseBonus) || 0)) : 0;
+  const spouseDerived401kByPct = filingStatus === 'MFJ' ? Math.min(
+    Math.round(((Number(spouseK401EmployeePct) || 0) / 100) * spouseGrossAnnual),
+    IRS_401K_LIMIT_2025
+  ) : 0;
+  const spouseK401Employee = filingStatus === 'MFJ' 
+    ? (spouseUse401kPercent ? spouseDerived401kByPct : Math.min(Number(spouseK401EmployeeFixed) || 0, IRS_401K_LIMIT_2025))
+    : 0;
+
   const usTax = useMemo(() => {
-    const gross = grossAnnualUS;
-    const pretaxAnnual = k401Employee + ((Number(healthSemiMonthly) || 0) * 24) + ((Number(otherSemiMonthly) || 0) * 24);
+    // Calculate household totals (user + spouse for MFJ)
+    const householdGross = grossAnnualUS + (filingStatus === 'MFJ' ? spouseGrossAnnual : 0);
+    const householdPretax = k401Employee + ((Number(healthSemiMonthly) || 0) * 24) + ((Number(otherSemiMonthly) || 0) * 24)
+      + (filingStatus === 'MFJ' ? (spouseK401Employee + ((Number(spouseHealthSemiMonthly) || 0) * 24) + ((Number(spouseOtherSemiMonthly) || 0) * 24)) : 0);
+    
+    const gross = householdGross;
+    const pretaxAnnual = householdPretax;
     const fedAdjIncome = Math.max(0, gross - pretaxAnnual);
     const stateAdjIncome = Math.max(0, gross - pretaxAnnual);
     const stdFed = FED_STD_DED[filingStatus] ?? 0;
@@ -305,7 +331,8 @@ export default function ESOPCalculator() {
     const fedTax = progressiveTax(fedTaxable, FED_BRACKETS[filingStatus]);
     const caTax = progressiveTax(caTaxable, CA_BRACKETS[filingStatus]);
 
-    const pretaxForFICA = ((Number(healthSemiMonthly) || 0) * 24) + ((Number(otherSemiMonthly) || 0) * 24);
+    const pretaxForFICA = ((Number(healthSemiMonthly) || 0) * 24) + ((Number(otherSemiMonthly) || 0) * 24)
+      + (filingStatus === 'MFJ' ? (((Number(spouseHealthSemiMonthly) || 0) * 24) + ((Number(spouseOtherSemiMonthly) || 0) * 24)) : 0);
     const ficaBase = Math.max(0, gross - pretaxForFICA);
     const ssTaxable = Math.min(ficaBase, Number(FICA_SS_WAGE_BASE_2025) || 0);
     const ss = ssTaxable * FICA_SS_RATE;
@@ -320,10 +347,12 @@ export default function ESOPCalculator() {
     const periods = payFreq === 'Semi-monthly' ? 24 : (payFreq === 'Monthly' ? 12 : 1); // Semi-monthly = 24 (twice per month)
     const per = (v) => v / periods;
     const matchAnnual = (Number(k401MatchPct) || 0) / 100 * (Number(usBaseIncome) || 0);
+    const spouseMatchAnnual = filingStatus === 'MFJ' ? ((Number(spouseK401MatchPct) || 0) / 100 * (Number(spouseBaseIncome) || 0)) : 0;
     const fedMarg = marginalRate(fedTaxable, FED_BRACKETS[filingStatus]) * 100;
     const caMarg = marginalRate(caTaxable, CA_BRACKETS[filingStatus]) * 100;
     const suggestedOrdinaryRate = Math.min(60, Math.round((fedMarg + caMarg) * 10) / 10);
 
+    // Individual (user) calculations for per-period breakdown
     const baseGross = Number(usBaseIncome) || 0;
     const bonusGross = Number(usBonus) || 0;
     const baseK401 = use401kPercent ? Math.min(Math.round(((Number(k401EmployeePct) || 0) / 100) * baseGross), IRS_401K_LIMIT_2025) : 0;
@@ -391,6 +420,65 @@ export default function ESOPCalculator() {
       caMarginalPct: (caMarginalOnly * 100).toFixed(1),
     };
 
+    // Spouse calculations (for MFJ)
+    let spouseOnly = null;
+    let spouseBonusEst = null;
+    
+    if (filingStatus === 'MFJ') {
+      const spouseBaseGross = Number(spouseBaseIncome) || 0;
+      const spouseBonusGross = Number(spouseBonus) || 0;
+      const spouseBaseK401 = spouseUse401kPercent ? Math.min(Math.round(((Number(spouseK401EmployeePct) || 0) / 100) * spouseBaseGross), IRS_401K_LIMIT_2025) : spouseK401Employee;
+      const spouseBaseHealthAnnual = (Number(spouseHealthSemiMonthly) || 0) * 24;
+      const spouseBaseOtherAnnual = (Number(spouseOtherSemiMonthly) || 0) * 24;
+      const spouseBasePretaxAnnual = spouseBaseK401 + spouseBaseHealthAnnual + spouseBaseOtherAnnual;
+      
+      // For per-period breakdown, we can't easily split household tax, so we'll show proportional allocation
+      const spouseShareOfIncome = spouseBaseGross / (baseGross + spouseBaseGross || 1);
+      const spousePeriods = spousePayFreq === 'Semi-monthly' ? 24 : (spousePayFreq === 'Monthly' ? 12 : 1);
+      const perSpouse = (v) => v / spousePeriods;
+      
+      spouseOnly = {
+        gross: spouseBaseGross,
+        pretaxAnnual: spouseBasePretaxAnnual,
+        // Allocate household taxes proportionally for display
+        fedTax: fedTaxBase * spouseShareOfIncome,
+        caTax: caTaxBase * spouseShareOfIncome,
+        ss: ssBase * spouseShareOfIncome,
+        med: medBaseTax * spouseShareOfIncome,
+        addlMed: addlMedBase * spouseShareOfIncome,
+        sdi: sdiBaseTax * spouseShareOfIncome,
+        periods: spousePeriods,
+        per: perSpouse,
+        netAnnual: spouseBaseGross - spouseBasePretaxAnnual - (fedTaxBase + caTaxBase + ssBase + medBaseTax + addlMedBase + sdiBaseTax) * spouseShareOfIncome,
+      };
+      
+      // Spouse bonus estimate
+      const spouseSSRemainingCap = Math.max(0, (Number(FICA_SS_WAGE_BASE_2025) || 0) - ssTaxableBase * spouseShareOfIncome);
+      const spouseSSOnBonus = Math.min(spouseBonusGross, spouseSSRemainingCap) * FICA_SS_RATE;
+      const spouseMedOnBonus = spouseBonusGross * FICA_MED_RATE;
+      const spouseCombinedMedBase = (medBaseBase * spouseShareOfIncome) + spouseBonusGross;
+      const spouseAddlMedOnBonus = Math.max(0, spouseCombinedMedBase - addlThresholdBase) * ADDL_MED_RATE - Math.max(0, medBaseBase * spouseShareOfIncome - addlThresholdBase) * ADDL_MED_RATE;
+      const spouseSDIOnBonus = spouseBonusGross * CA_SDI_RATE_2025;
+      const spouseFedOnBonus = spouseBonusGross * fedMarginalOnly;
+      const spouseCAOnBonus = spouseBonusGross * caMarginalOnly;
+      const spouseTotalTaxOnBonus = spouseFedOnBonus + spouseCAOnBonus + spouseSSOnBonus + spouseMedOnBonus + spouseAddlMedOnBonus + spouseSDIOnBonus;
+      const spouseNetBonus = spouseBonusGross - spouseTotalTaxOnBonus;
+      
+      spouseBonusEst = {
+        bonusGross: spouseBonusGross,
+        fedOnBonus: spouseFedOnBonus,
+        caOnBonus: spouseCAOnBonus,
+        ssOnBonus: spouseSSOnBonus,
+        medOnBonus: spouseMedOnBonus,
+        addlMedOnBonus: spouseAddlMedOnBonus,
+        sdiOnBonus: spouseSDIOnBonus,
+        totalTaxOnBonus: spouseTotalTaxOnBonus,
+        netBonus: spouseNetBonus,
+        fedMarginalPct: (fedMarginalOnly * 100).toFixed(1),
+        caMarginalPct: (caMarginalOnly * 100).toFixed(1),
+      };
+    }
+
     return {
       gross,
       pretaxAnnual,
@@ -411,9 +499,12 @@ export default function ESOPCalculator() {
       periods,
       per,
       matchAnnual,
+      spouseMatchAnnual,
       suggestedOrdinaryRate,
       baseOnly,
       bonusEst,
+      spouseOnly,
+      spouseBonusEst,
     };
   }, [
     usBaseIncome,
@@ -425,7 +516,16 @@ export default function ESOPCalculator() {
     healthSemiMonthly,
     otherSemiMonthly,
     filingStatus,
-    payFreq
+    payFreq,
+    spouseBaseIncome,
+    spouseBonus,
+    spouseUse401kPercent,
+    spouseK401EmployeePct,
+    spouseK401Employee,
+    spouseK401MatchPct,
+    spouseHealthSemiMonthly,
+    spouseOtherSemiMonthly,
+    spousePayFreq
   ]);
 
   // ====== MAIN CALCS (ESOP INDIA) ======
@@ -1930,7 +2030,7 @@ export default function ESOPCalculator() {
                   <div className="flex items-center justify-between mb-5">
                     <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                       <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full"></div>
-                      Income & 401(k)
+                      {filingStatus === 'MFJ' ? 'Your Income & 401(k)' : 'Income & 401(k)'}
                     </h3>
                     <span className="text-xs font-semibold px-2 py-1 bg-green-100 text-green-700 rounded-full">$ USD</span>
                   </div>
@@ -2006,12 +2106,108 @@ export default function ESOPCalculator() {
                   </div>
                 </div>
 
+                {/* Spouse Income & 401k Card (only for MFJ) */}
+                {filingStatus === 'MFJ' && (
+                  <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
+                    <div className="flex items-center justify-between mb-5">
+                      <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <div className="w-1 h-6 bg-gradient-to-b from-pink-500 to-rose-600 rounded-full"></div>
+                        Spouse Income & 401(k)
+                      </h3>
+                      <span className="text-xs font-semibold px-2 py-1 bg-pink-100 text-pink-700 rounded-full">$ USD</span>
+                    </div>
+                    <div className="space-y-4">
+                      <InputField
+                        label="Annual Base Salary"
+                        value={spouseBaseIncome}
+                        onChange={(e) => setSpouseBaseIncome(Number(e.target.value))}
+                        prefix="$"
+                        tooltip="Spouse's annual base salary before any deductions"
+                      />
+                      <InputField
+                        label="Annual Bonus"
+                        value={spouseBonus}
+                        onChange={(e) => setSpouseBonus(Number(e.target.value))}
+                        prefix="$"
+                        tooltip="Spouse's expected annual bonus amount"
+                      />
+
+                      {/* Spouse 401k Section */}
+                      <div className="pt-3 border-t border-gray-200">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-sm font-medium text-gray-700">401(k) Contribution</span>
+                          <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={spouseUse401kPercent}
+                              onChange={(e) => setSpouseUse401kPercent(e.target.checked)}
+                              className="w-3.5 h-3.5 text-pink-600 border-gray-300 rounded focus:ring-pink-500"
+                            />
+                            Enter as %
+                          </label>
+                        </div>
+                        {spouseUse401kPercent ? (
+                          <div className="space-y-2">
+                            <InputField
+                              label="Percentage of Salary"
+                              value={spouseK401EmployeePct}
+                              onChange={(e) => setSpouseK401EmployeePct(Number(e.target.value))}
+                              suffix="%"
+                            />
+                            <p className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                              Estimated: <span className="font-semibold">{fmtUSD0(spouseDerived401kByPct)}</span> (capped at ${IRS_401K_LIMIT_2025.toLocaleString()})
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <InputField
+                              label="Dollar Amount"
+                              value={spouseK401EmployeeFixed}
+                              onChange={(e) => setSpouseK401EmployeeFixed(Number(e.target.value))}
+                              prefix="$"
+                            />
+                            <p className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                              Max allowed: <span className="font-semibold">${IRS_401K_LIMIT_2025.toLocaleString()}</span>
+                            </p>
+                          </div>
+                        )}
+                        <div className="mt-3">
+                          <InputField
+                            label="Company Match (%)"
+                            value={spouseK401MatchPct}
+                            onChange={(e) => setSpouseK401MatchPct(Number(e.target.value))}
+                            suffix="%"
+                            tooltip="Spouse's company match isn't taxed now—shown for planning only"
+                          />
+                          <p className="text-xs text-gray-600 bg-pink-50 p-2 rounded mt-2">
+                            Estimated company match: <span className="font-semibold text-pink-700">{fmtUSD0(usTax?.spouseMatchAnnual || 0)}</span> / year
+                          </p>
+                        </div>
+                        <div className="mt-3">
+                          <div className="space-y-1.5">
+                            <label className="text-sm font-medium text-gray-700">Pay Frequency</label>
+                            <select
+                              value={spousePayFreq}
+                              onChange={(e) => setSpousePayFreq(e.target.value)}
+                              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white hover:border-gray-300 transition-all text-sm"
+                            >
+                              <option>Yearly</option>
+                              <option>Monthly</option>
+                              <option>Semi-monthly</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Deductions & Filing Card */}
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
                   <div className="flex items-center justify-between mb-5">
                     <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                       <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full"></div>
-                      Deductions & Filing
+                      {filingStatus === 'MFJ' ? 'Your Deductions & Filing' : 'Deductions & Filing'}
                     </h3>
                     <span className="text-xs font-semibold px-2 py-1 bg-green-100 text-green-700 rounded-full">$ USD</span>
                   </div>
@@ -2032,6 +2228,29 @@ export default function ESOPCalculator() {
                         tooltip="Other pre-tax deductions per semi-monthly period"
                       />
                     </div>
+
+                    {/* Spouse Deductions (only for MFJ) */}
+                    {filingStatus === 'MFJ' && (
+                      <div className="pt-3 border-t border-pink-200">
+                        <p className="text-xs font-semibold text-pink-700 mb-2 uppercase tracking-wide">Spouse's Deductions</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <InputField
+                            label="Health (semi-monthly)"
+                            value={spouseHealthSemiMonthly}
+                            onChange={(e) => setSpouseHealthSemiMonthly(Number(e.target.value))}
+                            prefix="$"
+                            tooltip="Spouse's pre-tax health insurance deduction per semi-monthly period"
+                          />
+                          <InputField
+                            label="Other (semi-monthly)"
+                            value={spouseOtherSemiMonthly}
+                            onChange={(e) => setSpouseOtherSemiMonthly(Number(e.target.value))}
+                            prefix="$"
+                            tooltip="Spouse's other pre-tax deductions per semi-monthly period"
+                          />
+                        </div>
+                      </div>
+                    )}
 
                     <div className="space-y-1.5">
                       <label className="text-sm font-medium text-gray-700">Filing Status</label>
@@ -2142,10 +2361,17 @@ export default function ESOPCalculator() {
                   <div className="flex items-center justify-between mb-5">
                     <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                       <div className="w-1 h-6 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full"></div>
-                      Annual Summary
+                      {filingStatus === 'MFJ' ? 'Household Annual Summary' : 'Annual Summary'}
                     </h3>
                     <span className="text-xs font-semibold px-2 py-1 bg-green-100 text-green-700 rounded-full">$ USD</span>
                   </div>
+                  {filingStatus === 'MFJ' && (
+                    <div className="mb-4 p-3 bg-gradient-to-r from-indigo-50 to-pink-50 rounded-lg border border-indigo-200">
+                      <p className="text-xs text-indigo-900 font-medium">
+                        <strong>Married Filing Jointly:</strong> Showing combined household income and taxes
+                      </p>
+                    </div>
+                  )}
                   <div className="space-y-2.5 text-sm">
                     <div className="flex justify-between p-2 hover:bg-gray-50 rounded transition-colors">
                       <span className="text-gray-600">Gross Income</span>
@@ -2217,10 +2443,17 @@ export default function ESOPCalculator() {
                   <div className="flex items-center justify-between mb-5">
                     <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                       <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
-                      Per-Period Breakdown ({payFreq})
+                      {filingStatus === 'MFJ' ? 'Your Per-Period Breakdown' : `Per-Period Breakdown (${payFreq})`}
                     </h3>
                     <span className="text-xs font-semibold px-2 py-1 bg-green-100 text-green-700 rounded-full">$ USD</span>
                   </div>
+                  {filingStatus === 'MFJ' && (
+                    <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-xs text-blue-900 font-medium">
+                        Pay Frequency: <strong>{payFreq}</strong> ({usTax.baseOnly.periods} periods/year)
+                      </p>
+                    </div>
+                  )}
                   <div className="space-y-2.5 text-sm mb-6">
                     <div className="flex justify-between p-2 hover:bg-gray-50 rounded transition-colors">
                       <span className="text-gray-600">Gross / period</span>
@@ -2291,6 +2524,101 @@ export default function ESOPCalculator() {
                     </p>
                   </div>
                 </div>
+
+                {/* Spouse Per-Period Breakdown (only for MFJ) */}
+                {filingStatus === 'MFJ' && usTax.spouseOnly && (
+                  <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg p-6 border border-gray-100">
+                    <div className="flex items-center justify-between mb-5">
+                      <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <div className="w-1 h-6 bg-gradient-to-b from-pink-500 to-rose-600 rounded-full"></div>
+                        Spouse's Per-Period Breakdown
+                      </h3>
+                      <span className="text-xs font-semibold px-2 py-1 bg-pink-100 text-pink-700 rounded-full">$ USD</span>
+                    </div>
+                    <div className="mb-4 p-3 bg-pink-50 rounded-lg border border-pink-200">
+                      <p className="text-xs text-pink-900 font-medium">
+                        Pay Frequency: <strong>{spousePayFreq}</strong> ({usTax.spouseOnly.periods} periods/year)
+                      </p>
+                    </div>
+                    <div className="space-y-2.5 text-sm mb-6">
+                      <div className="flex justify-between p-2 hover:bg-gray-50 rounded transition-colors">
+                        <span className="text-gray-600">Gross / period</span>
+                        <span className="font-semibold">{fmtUSD0(usTax.spouseOnly.per(usTax.spouseOnly.gross))}</span>
+                      </div>
+                      <div className="flex justify-between p-2 hover:bg-gray-50 rounded transition-colors">
+                        <span className="text-gray-600">Pre-tax / period</span>
+                        <span className="font-semibold text-red-600">-{fmtUSD0(usTax.spouseOnly.per(usTax.spouseOnly.pretaxAnnual))}</span>
+                      </div>
+                      <div className="flex justify-between p-2 hover:bg-gray-50 rounded transition-colors">
+                        <span className="text-gray-600">Fed Tax / period (allocated)</span>
+                        <span className="font-semibold text-red-600">-{fmtUSD0(usTax.spouseOnly.per(usTax.spouseOnly.fedTax))}</span>
+                      </div>
+                      <div className="flex justify-between p-2 hover:bg-gray-50 rounded transition-colors">
+                        <span className="text-gray-600">CA Tax / period (allocated)</span>
+                        <span className="font-semibold text-red-600">-{fmtUSD0(usTax.spouseOnly.per(usTax.spouseOnly.caTax))}</span>
+                      </div>
+                      <div className="flex justify-between p-2 hover:bg-gray-50 rounded transition-colors">
+                        <span className="text-gray-600">FICA / period (allocated)</span>
+                        <span className="font-semibold text-red-600">
+                          -{fmtUSD0(usTax.spouseOnly.per(usTax.spouseOnly.ss + usTax.spouseOnly.med + usTax.spouseOnly.addlMed))}
+                        </span>
+                      </div>
+                      <div className="flex justify-between p-2 hover:bg-gray-50 rounded transition-colors">
+                        <span className="text-gray-600">CA SDI / period (allocated)</span>
+                        <span className="font-semibold text-red-600">-{fmtUSD0(usTax.spouseOnly.per(usTax.spouseOnly.sdi))}</span>
+                      </div>
+                      <div className="flex justify-between p-3 bg-gradient-to-r from-pink-50 to-rose-50 rounded-lg font-bold border border-pink-200 mt-2">
+                        <span className="text-gray-800">Net / period</span>
+                        <span className="text-pink-600">{fmtUSD0(usTax.spouseOnly.per(usTax.spouseOnly.netAnnual))}</span>
+                      </div>
+                    </div>
+
+                    {/* Spouse Bonus Estimate */}
+                    {usTax.spouseBonusEst && usTax.spouseBonusEst.bonusGross > 0 && (
+                      <div className="p-4 bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl border border-pink-200">
+                        <h4 className="font-semibold text-pink-900 mb-3 text-sm">Bonus — One-time Tax Estimate</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Bonus (gross)</span>
+                            <span className="font-semibold">{fmtUSD0(usTax.spouseBonusEst.bonusGross)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Federal (≈ {usTax.spouseBonusEst.fedMarginalPct}%)</span>
+                            <span className="font-semibold text-red-600">-{fmtUSD0(usTax.spouseBonusEst.fedOnBonus)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">California (≈ {usTax.spouseBonusEst.caMarginalPct}%)</span>
+                            <span className="font-semibold text-red-600">-{fmtUSD0(usTax.spouseBonusEst.caOnBonus)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">FICA (all)</span>
+                            <span className="font-semibold text-red-600">
+                              -{fmtUSD0(usTax.spouseBonusEst.ssOnBonus + usTax.spouseBonusEst.medOnBonus + usTax.spouseBonusEst.addlMedOnBonus)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">CA SDI</span>
+                            <span className="font-semibold text-red-600">-{fmtUSD0(usTax.spouseBonusEst.sdiOnBonus)}</span>
+                          </div>
+                          <div className="h-px bg-pink-200 my-2"></div>
+                          <div className="flex justify-between font-bold">
+                            <span className="text-pink-900">Net Bonus (take-home)</span>
+                            <span className="text-pink-600">{fmtUSD0(usTax.spouseBonusEst.netBonus)}</span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-pink-700/80 mt-3 bg-white/50 p-2 rounded">
+                          Estimated using current marginal rates. Employers may use supplemental withholding rules.
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="mt-4 p-3 bg-pink-50 rounded-lg border border-pink-200">
+                      <p className="text-xs text-pink-900">
+                        <strong>401(k) Company Match:</strong> {fmtUSD0(usTax?.spouseMatchAnnual || 0)} / year (not taxed now)
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
