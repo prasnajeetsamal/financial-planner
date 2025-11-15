@@ -1,3 +1,7 @@
+// -----------------------------------------------------------------------------------------------------------------------------------------------
+// --------------------- Code Archive --------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------------------------------------
+
 import React, { useState, useMemo } from 'react';
 import { Calculator, TrendingUp, DollarSign, Plus, Trash2, Calendar, Info, Download, Copy, Check } from 'lucide-react';
 
@@ -29,10 +33,10 @@ const InputField = ({ label, value, onChange, type = "number", placeholder = "0"
         value={value}
         onChange={onChange}
         disabled={disabled}
-        className={`w-full ${prefix ? 'pl-8' : 'pl-4'} ${suffix ? 'pr-12' : 'pr-4'} py-2.5 border border-gray-200 rounded-lg 
-          focus:ring-2 focus:ring-indigo-500 focus:border-transparent 
-          ${disabled ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white hover:border-gray-300'} 
-          transition-all duration-200 text-sm`}
+        className={`w-full ${prefix ? 'pl-8' : 'pl-4'} ${suffix ? 'pr-12' : 'pr-4'} py-3 border-2 border-gray-200 rounded-xl 
+          focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 
+          ${disabled ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'bg-white hover:border-gray-300 hover:shadow-sm'} 
+          transition-all duration-200 text-sm font-medium shadow-sm`}
         placeholder={placeholder}
       />
       {suffix && (
@@ -45,7 +49,7 @@ const InputField = ({ label, value, onChange, type = "number", placeholder = "0"
 );
 
 const StatCard = ({ icon: Icon, title, value, subtitle, gradient }) => (
-  <div className={`relative overflow-hidden rounded-xl p-5 bg-gradient-to-br ${gradient} text-white shadow-lg hover:shadow-xl transition-all duration-300 group`}>
+  <div className={`relative overflow-hidden rounded-2xl p-6 bg-gradient-to-br ${gradient} text-white shadow-lg hover:shadow-xl transition-all duration-300 group`}>
     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500"></div>
     <div className="relative z-10">
       <div className="flex items-center gap-3 mb-3">
@@ -91,7 +95,7 @@ export default function ESOPCalculator() {
   // US / FX
   const [fxRate, setFxRate] = useState(87);
   const [usEffectiveRate, setUsEffectiveRate] = useState(33);
-  const [usCGRate, setUsCGRate] = useState(29);
+  const [usCGRate, setUsCGRate] = useState(10);
   const [includeNIIT, setIncludeNIIT] = useState(false);
   const [includeFICA, setIncludeFICA] = useState(false);
 
@@ -212,7 +216,7 @@ export default function ESOPCalculator() {
   const [spouseK401MatchPct, setSpouseK401MatchPct] = useState(0);
   const [spouseHealthSemiMonthly, setSpouseHealthSemiMonthly] = useState(0);
   const [spouseOtherSemiMonthly, setSpouseOtherSemiMonthly] = useState(0);
-  const [spousePayFreq, setSpousePayFreq] = useState('Monthly');
+  // Removed: const [spousePayFreq, setSpousePayFreq] = useState('Monthly');
 
   // Constants
   const IRS_401K_LIMIT_2025 = 23500;
@@ -434,7 +438,7 @@ export default function ESOPCalculator() {
       
       // For per-period breakdown, we can't easily split household tax, so we'll show proportional allocation
       const spouseShareOfIncome = spouseBaseGross / (baseGross + spouseBaseGross || 1);
-      const spousePeriods = spousePayFreq === 'Semi-monthly' ? 24 : (spousePayFreq === 'Monthly' ? 12 : 1);
+      const spousePeriods = payFreq === 'Semi-monthly' ? 24 : (payFreq === 'Monthly' ? 12 : 1);
       const perSpouse = (v) => v / spousePeriods;
       
       spouseOnly = {
@@ -525,7 +529,7 @@ export default function ESOPCalculator() {
     spouseK401MatchPct,
     spouseHealthSemiMonthly,
     spouseOtherSemiMonthly,
-    spousePayFreq
+    // spousePayFreq removed
   ]);
 
   // ====== MAIN CALCS (ESOP INDIA) ======
@@ -1010,7 +1014,7 @@ export default function ESOPCalculator() {
           {activeTab === 'esop-india' ? (
             <div className="space-y-6">
               {/* Input Cards Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 gap-6">
                 {/* ESOP Grants Card */}
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300">
                   <div className="flex justify-between items-center mb-5">
@@ -1071,7 +1075,7 @@ export default function ESOPCalculator() {
                   </div>
 
                   {/* Summary */}
-                  <div className="mt-4 pt-4 border-t border-gray-200 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg p-4">
+                  <div className="mt-4 pt-4 border-t border-gray-200 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-xs text-gray-600 mb-1">Total Shares</p>
@@ -1087,12 +1091,12 @@ export default function ESOPCalculator() {
                   </div>
                 </div>
 
-                {/* Valuation & Timeline Card */}
+                {/* Income, Valuation & Timeline Card */}
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300">
                   <div className="flex items-center justify-between mb-5">
                     <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                       <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full"></div>
-                      Valuation & Timeline
+                      Income, Valuation & Timeline
                     </h3>
                     <span className="text-xs font-semibold px-2 py-1 bg-blue-100 text-blue-700 rounded-full">₹ INR</span>
                   </div>
@@ -1119,22 +1123,54 @@ export default function ESOPCalculator() {
 
                   {/* Input Fields */}
                   <div className="space-y-4">
+                    {/* Other Annual Income */}
+                    <InputField
+                      label="Other Annual Income"
+                      value={otherIncome}
+                      onChange={(e) => setOtherIncome(Number(e.target.value))}
+                      prefix="₹"
+                      tooltip="Your other taxable income for the year"
+                    />
+
                     <div className="grid grid-cols-2 gap-4">
-                      <InputField
-                        label="FMV at Exercise"
-                        value={fmvExercise}
-                        onChange={(e) => setFmvExercise(Number(e.target.value))}
-                        prefix="₹"
-                        tooltip="Fair Market Value when you exercise your options"
-                      />
+                      {/* FMV at Exercise with USD conversion */}
+                      <div className="space-y-1.5">
+                        <label className="flex items-center text-sm font-medium text-gray-700">
+                          FMV at Exercise
+                          <InfoTooltip text="Fair Market Value when you exercise your options" />
+                        </label>
+                        <div className="relative group">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none">₹</span>
+                          <input
+                            type="number"
+                            value={fmvExercise}
+                            onChange={(e) => setFmvExercise(Number(e.target.value))}
+                            className="w-full pl-8 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white hover:border-gray-300 hover:shadow-sm transition-all duration-200 text-sm font-medium shadow-sm"
+                            placeholder="0"
+                          />
+                        </div>
+                        <p className="text-xs text-gray-600">USD: {fmtUSD0(fmvExercise / fxRate)}</p>
+                      </div>
+
+                      {/* Sale Price with USD conversion */}
                       {planToExercise && (
-                        <InputField
-                          label="Sale Price / Expected FMV"
-                          value={fmvSale}
-                          onChange={(e) => setFmvSale(Number(e.target.value))}
-                          prefix="₹"
-                          tooltip="Expected price when selling your shares"
-                        />
+                        <div className="space-y-1.5">
+                          <label className="flex items-center text-sm font-medium text-gray-700">
+                            Sale Price / Expected FMV
+                            <InfoTooltip text="Expected price when selling your shares" />
+                          </label>
+                          <div className="relative group">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none">₹</span>
+                            <input
+                              type="number"
+                              value={fmvSale}
+                              onChange={(e) => setFmvSale(Number(e.target.value))}
+                              className="w-full pl-8 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white hover:border-gray-300 hover:shadow-sm transition-all duration-200 text-sm font-medium shadow-sm"
+                              placeholder="0"
+                            />
+                          </div>
+                          <p className="text-xs text-gray-600">USD: {fmtUSD0(fmvSale / fxRate)}</p>
+                        </div>
                       )}
                     </div>
 
@@ -1206,8 +1242,8 @@ export default function ESOPCalculator() {
                   <span className="text-xs font-semibold px-2 py-1 bg-blue-100 text-blue-700 rounded-full">₹ INR</span>
                 </div>
 
-                <div className="space-y-5">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
                     {/* Financial Year - uniform height */}
                     <div className="space-y-1.5">
                       <label className="text-sm font-medium text-gray-700">Financial Year</label>
@@ -1220,24 +1256,6 @@ export default function ESOPCalculator() {
                         <option value="2024-25">FY 2024-25</option>
                         <option value="2026-27">FY 2026-27</option>
                       </select>
-                    </div>
-
-                    {/* Other Annual Income - uniform height */}
-                    <div className="space-y-1.5">
-                      <label className="flex items-center text-sm font-medium text-gray-700">
-                        Other Annual Income
-                        <InfoTooltip text="Your other taxable income for the year" />
-                      </label>
-                      <div className="relative group">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none">₹</span>
-                        <input
-                          type="number"
-                          value={otherIncome}
-                          onChange={(e) => setOtherIncome(Number(e.target.value))}
-                          className="w-full pl-8 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white hover:border-gray-300 transition-all duration-200 text-sm h-[42px]"
-                          placeholder="0"
-                        />
-                      </div>
                     </div>
 
                     {/* Shares Listed Toggle - uniform height */}
@@ -1340,7 +1358,7 @@ export default function ESOPCalculator() {
                   </div>
 
                   {/* Detailed Results Grid */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-2 gap-6">
                     {/* Perquisite Tax */}
                     <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all">
                       <div className="flex items-center gap-3 mb-5">
@@ -1423,7 +1441,7 @@ export default function ESOPCalculator() {
                         <p className="text-sm text-indigo-200 mb-1">Exercise Cost</p>
                         <p className="text-2xl font-bold">{formatLargeNumber(calculationsIndia.exerciseCost)}</p>
                       </div>
-                      <div>
+                      <div className="text-right">
                         <p className="text-sm text-indigo-200 mb-1">Total Tax</p>
                         <p className="text-2xl font-bold">{formatLargeNumber(calculationsIndia.totalTax)}</p>
                       </div>
@@ -1469,7 +1487,7 @@ export default function ESOPCalculator() {
           ) : activeTab === 'esop-us' ? (
             <div className="space-y-6">
               {/* US ESOP Calculator Content */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 gap-6">
                 {/* ESOP Grants Card (Same as India) */}
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300">
                   <div className="flex justify-between items-center mb-5">
@@ -1489,7 +1507,7 @@ export default function ESOPCalculator() {
                     </button>
                   </div>
 
-                  <div className="space-y-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar mb-4">
                     {tranches.map((tranche, index) => (
                       <div key={tranche.id} className="bg-gradient-to-br from-gray-50 to-blue-50/50 p-4 rounded-xl border border-gray-200 hover:shadow-md transition-all duration-200">
                         <div className="flex justify-between items-center mb-3">
@@ -1530,7 +1548,7 @@ export default function ESOPCalculator() {
                     ))}
                   </div>
 
-                  <div className="mt-4 pt-4 border-t border-gray-200 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg p-4">
+                  <div className="pt-4 border-t border-gray-200 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-xs text-gray-600 mb-1">Total Shares</p>
@@ -1585,13 +1603,13 @@ export default function ESOPCalculator() {
                       tooltip="INR to USD exchange rate"
                     />
 
-                    {/* FMV at Exercise - show both INR and USD */}
-                    <div className="space-y-1.5">
-                      <label className="flex items-center text-sm font-medium text-gray-700">
-                        FMV at Exercise
-                        <InfoTooltip text="Fair Market Value when you exercise your options" />
-                      </label>
-                      <div className="grid grid-cols-2 gap-2">
+                    {/* FMV at Exercise - show both INR and USD side by side */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="flex items-center text-sm font-medium text-gray-700">
+                          FMV at Exercise (INR)
+                          <InfoTooltip text="Fair Market Value when you exercise your options" />
+                        </label>
                         <div className="relative group">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none">₹</span>
                           <input
@@ -1602,25 +1620,15 @@ export default function ESOPCalculator() {
                             placeholder="0"
                           />
                         </div>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            value={fmtUSD0(usFmvExerciseINR / fxRate)}
-                            readOnly
-                            className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 text-sm"
-                          />
-                        </div>
+                        <p className="text-xs text-gray-600">USD: {fmtUSD0(usFmvExerciseINR / fxRate)}</p>
                       </div>
-                    </div>
 
-                    {/* Sale Price - show both INR and USD */}
-                    {planToExercise && (
-                      <div className="space-y-1.5">
-                        <label className="flex items-center text-sm font-medium text-gray-700">
-                          Sale Price / Expected FMV
-                          <InfoTooltip text="Expected price when selling your shares" />
-                        </label>
-                        <div className="grid grid-cols-2 gap-2">
+                      {planToExercise && (
+                        <div className="space-y-1.5">
+                          <label className="flex items-center text-sm font-medium text-gray-700">
+                            Sale Price / Expected FMV (INR)
+                            <InfoTooltip text="Expected price when selling your shares" />
+                          </label>
                           <div className="relative group">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none">₹</span>
                             <input
@@ -1631,17 +1639,10 @@ export default function ESOPCalculator() {
                               placeholder="0"
                             />
                           </div>
-                          <div className="relative">
-                            <input
-                              type="text"
-                              value={fmtUSD0(usFmvSaleINR / fxRate)}
-                              readOnly
-                              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 text-sm"
-                            />
-                          </div>
+                          <p className="text-xs text-gray-600">USD: {fmtUSD0(usFmvSaleINR / fxRate)}</p>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
 
                     {/* Dates */}
                     <div className="grid grid-cols-2 gap-4">
@@ -1690,6 +1691,17 @@ export default function ESOPCalculator() {
                         </div>
                       </div>
                     )}
+
+                    {/* CG Rate */}
+                    {planToExercise && holdMonths > 12 && (
+                      <InputField
+                        label="CG Rate (%)"
+                        value={usCGRate}
+                        onChange={(e) => setUsCGRate(Number(e.target.value))}
+                        suffix="%"
+                        tooltip="Long-term capital gains tax rate"
+                      />
+                    )}
                   </div>
                 </div>
               </div>
@@ -1704,7 +1716,7 @@ export default function ESOPCalculator() {
                   <span className="text-xs font-semibold px-2 py-1 bg-green-100 text-green-700 rounded-full">$ USD</span>
                 </div>
 
-                <div className="space-y-5">
+                <div className="space-y-6">
                   {/* Toggle for data source */}
                   <div className="p-4 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border-2 border-purple-200">
                     <label className="flex items-center gap-3 cursor-pointer group">
@@ -1729,7 +1741,7 @@ export default function ESOPCalculator() {
 
                   {/* Manual inputs (shown when toggle is off) */}
                   {!usUseIncomeTaxData && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-xl">
+                    <div className="grid grid-cols-3 gap-6 p-4 bg-gray-50 rounded-xl">
                       <InputField
                         label="US Base Salary"
                         value={usManualBaseSalary}
@@ -1796,25 +1808,16 @@ export default function ESOPCalculator() {
                   </div>
 
                   {/* Tax Options */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <InputField
-                      label="CG Rate (%)"
-                      value={usCGRate}
-                      onChange={(e) => setUsCGRate(Number(e.target.value))}
-                      suffix="%"
-                      tooltip="Long-term capital gains tax rate"
-                    />
-                    <div className="space-y-3 pt-6">
-                      <label className="flex items-center gap-2 cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                        <input
-                          type="checkbox"
-                          checked={includeNIIT}
-                          onChange={(e) => setIncludeNIIT(e.target.checked)}
-                          className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                        />
-                        <span className="text-sm text-gray-700 font-medium">Include NIIT (3.8%)</span>
-                      </label>
-                    </div>
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={includeNIIT}
+                        onChange={(e) => setIncludeNIIT(e.target.checked)}
+                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                      />
+                      <span className="text-sm text-gray-700 font-medium">Include NIIT (3.8%)</span>
+                    </label>
                   </div>
 
                   <button
@@ -1893,7 +1896,7 @@ export default function ESOPCalculator() {
                   </div>
 
                   {/* Tax Breakdown Cards */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-2 gap-6">
                     {/* Income & Perquisite Tax */}
                     <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all">
                       <div className="flex items-center gap-3 mb-5">
@@ -1977,7 +1980,7 @@ export default function ESOPCalculator() {
                         <p className="text-sm text-indigo-200 mb-1">Exercise Cost (USD)</p>
                         <p className="text-2xl font-bold">{fmtUSD0(calculationsUS.exerciseCostUSD)}</p>
                       </div>
-                      <div>
+                      <div className="text-right">
                         <p className="text-sm text-indigo-200 mb-1">Total Tax (USD)</p>
                         <p className="text-2xl font-bold">{fmtUSD0(calculationsUS.totalTaxUSD)}</p>
                       </div>
@@ -2024,7 +2027,7 @@ export default function ESOPCalculator() {
             // ============ INCOME TAX CALCULATOR TAB ============
             <div className="space-y-6">
               {/* Input Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 gap-6">
                 {/* Income & 401k Card */}
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
                   <div className="flex items-center justify-between mb-5">
@@ -2183,66 +2186,62 @@ export default function ESOPCalculator() {
                             Estimated company match: <span className="font-semibold text-pink-700">{fmtUSD0(usTax?.spouseMatchAnnual || 0)}</span> / year
                           </p>
                         </div>
-                        <div className="mt-3">
-                          <div className="space-y-1.5">
-                            <label className="text-sm font-medium text-gray-700">Pay Frequency</label>
-                            <select
-                              value={spousePayFreq}
-                              onChange={(e) => setSpousePayFreq(e.target.value)}
-                              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white hover:border-gray-300 transition-all text-sm"
-                            >
-                              <option>Yearly</option>
-                              <option>Monthly</option>
-                              <option>Semi-monthly</option>
-                            </select>
-                          </div>
-                        </div>
+                        {/* Pay Frequency selector removed - now using unified payFreq from "Your Deductions and Filing" section */}
                       </div>
                     </div>
                   </div>
                 )}
+              </div>
 
-                {/* Deductions & Filing Card */}
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
-                  <div className="flex items-center justify-between mb-5">
-                    <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                      <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full"></div>
-                      {filingStatus === 'MFJ' ? 'Your Deductions & Filing' : 'Deductions & Filing'}
-                    </h3>
-                    <span className="text-xs font-semibold px-2 py-1 bg-green-100 text-green-700 rounded-full">$ USD</span>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
-                      <InputField
-                        label="Health (semi-monthly)"
-                        value={healthSemiMonthly}
-                        onChange={(e) => setHealthSemiMonthly(Number(e.target.value))}
-                        prefix="$"
-                        tooltip="Pre-tax health insurance deduction per semi-monthly period"
-                      />
-                      <InputField
-                        label="Other (semi-monthly)"
-                        value={otherSemiMonthly}
-                        onChange={(e) => setOtherSemiMonthly(Number(e.target.value))}
-                        prefix="$"
-                        tooltip="Other pre-tax deductions per semi-monthly period"
-                      />
+              {/* Deductions & Filing Card - Full Width */}
+              <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
+                <div className="flex items-center justify-between mb-5">
+                  <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full"></div>
+                    Deductions & Filing
+                  </h3>
+                  <span className="text-xs font-semibold px-2 py-1 bg-green-100 text-green-700 rounded-full">$ USD</span>
+                </div>
+                <div className="space-y-4">
+                  {/* Employee & Spouse Deductions Side by Side */}
+                  <div className={`grid gap-6 ${filingStatus === 'MFJ' ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    {/* Employee's Deductions */}
+                    <div>
+                      <p className="text-sm font-semibold text-indigo-700 mb-3 uppercase tracking-wide">
+                        {filingStatus === 'MFJ' ? "Your Deductions" : "Deductions"}
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <InputField
+                          label="Health"
+                          value={healthSemiMonthly}
+                          onChange={(e) => setHealthSemiMonthly(Number(e.target.value))}
+                          prefix="$"
+                          tooltip="Pre-tax health insurance deduction per semi-monthly period"
+                        />
+                        <InputField
+                          label="Other"
+                          value={otherSemiMonthly}
+                          onChange={(e) => setOtherSemiMonthly(Number(e.target.value))}
+                          prefix="$"
+                          tooltip="Other pre-tax deductions per semi-monthly period"
+                        />
+                      </div>
                     </div>
 
-                    {/* Spouse Deductions (only for MFJ) */}
+                    {/* Spouse's Deductions (only for MFJ) */}
                     {filingStatus === 'MFJ' && (
-                      <div className="pt-3 border-t border-pink-200">
-                        <p className="text-xs font-semibold text-pink-700 mb-2 uppercase tracking-wide">Spouse's Deductions</p>
+                      <div>
+                        <p className="text-sm font-semibold text-pink-700 mb-3 uppercase tracking-wide">Spouse's Deductions</p>
                         <div className="grid grid-cols-2 gap-3">
                           <InputField
-                            label="Health (semi-monthly)"
+                            label="Health"
                             value={spouseHealthSemiMonthly}
                             onChange={(e) => setSpouseHealthSemiMonthly(Number(e.target.value))}
                             prefix="$"
                             tooltip="Spouse's pre-tax health insurance deduction per semi-monthly period"
                           />
                           <InputField
-                            label="Other (semi-monthly)"
+                            label="Other"
                             value={spouseOtherSemiMonthly}
                             onChange={(e) => setSpouseOtherSemiMonthly(Number(e.target.value))}
                             prefix="$"
@@ -2251,7 +2250,16 @@ export default function ESOPCalculator() {
                         </div>
                       </div>
                     )}
+                  </div>
 
+                  {/* Semi-monthly Note */}
+                  <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
+                    <p className="text-xs text-amber-900">
+                      <strong>Note:</strong> All deduction amounts above are per semi-monthly pay period (24 periods/year).
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-sm font-medium text-gray-700">Filing Status</label>
                       <select
@@ -2276,78 +2284,82 @@ export default function ESOPCalculator() {
                         <option>Semi-monthly</option>
                       </select>
                     </div>
+                  </div>
 
-                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <p className="text-xs text-blue-900">
-                        <strong>Note:</strong> Pre-tax deductions (401k, health, other) reduce your taxable income for Federal & CA taxes.
-                      </p>
-                    </div>
+                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-xs text-blue-900">
+                      <strong>Note:</strong> Pre-tax deductions (401k, health, other) reduce your taxable income for Federal & CA taxes.
+                    </p>
                   </div>
                 </div>
+              </div>
 
-                {/* FICA & Info Card */}
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
-                  <div className="flex items-center justify-between mb-5">
-                    <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                      <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full"></div>
-                      FICA & Assumptions
-                    </h3>
-                    <span className="text-xs font-semibold px-2 py-1 bg-green-100 text-green-700 rounded-full">$ USD</span>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-xs text-gray-600 mb-1 block">SS Wage Base (2025)</label>
-                        <input
-                          type="number"
-                          value={FICA_SS_WAGE_BASE_2025}
-                          readOnly
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-600 mb-1 block">SS Rate</label>
-                        <input
-                          type="number"
-                          step="0.0001"
-                          value={FICA_SS_RATE}
-                          readOnly
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-600 mb-1 block">Medicare Rate</label>
-                        <input
-                          type="number"
-                          step="0.0001"
-                          value={FICA_MED_RATE}
-                          readOnly
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-600 mb-1 block">Addl Medicare Rate</label>
-                        <input
-                          type="number"
-                          step="0.0001"
-                          value={ADDL_MED_RATE}
-                          readOnly
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 text-sm"
-                        />
-                      </div>
+              {/* FICA & Info Card - Full Width */}
+              <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
+                <div className="flex items-center justify-between mb-5">
+                  <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full"></div>
+                    FICA & Assumptions
+                  </h3>
+                  <span className="text-xs font-semibold px-2 py-1 bg-green-100 text-green-700 rounded-full">$ USD</span>
+                </div>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-4 gap-3">
+                    <div>
+                      <label className="text-xs text-gray-600 mb-1 block">SS Wage Base (2025)</label>
+                      <input
+                        type="number"
+                        value={FICA_SS_WAGE_BASE_2025}
+                        readOnly
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 text-sm"
+                      />
                     </div>
+                    <div>
+                      <label className="text-xs text-gray-600 mb-1 block">SS Rate</label>
+                      <input
+                        type="number"
+                        step="0.0001"
+                        value={FICA_SS_RATE}
+                        readOnly
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600 mb-1 block">Medicare Rate</label>
+                      <input
+                        type="number"
+                        step="0.0001"
+                        value={FICA_MED_RATE}
+                        readOnly
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600 mb-1 block">Addl Medicare Rate</label>
+                      <input
+                        type="number"
+                        step="0.0001"
+                        value={ADDL_MED_RATE}
+                        readOnly
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 text-sm"
+                      />
+                    </div>
+                  </div>
 
-                    <div className="p-3 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg border border-indigo-200 mt-4">
-                      <h4 className="text-xs font-semibold text-indigo-900 mb-2">Standard Deductions (2025)</h4>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <p className="text-gray-600">Federal {filingStatus}</p>
-                          <p className="font-bold text-indigo-700">{fmtUSD0(FED_STD_DED[filingStatus])}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">California {filingStatus}</p>
-                          <p className="font-bold text-indigo-700">{fmtUSD0(CA_STD_DED[filingStatus])}</p>
-                        </div>
+                  <div className="p-3 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg border border-indigo-200 mt-4">
+                    <h4 className="text-xs font-semibold text-indigo-900 mb-2">Standard Deductions (2025)</h4>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <p className="text-gray-700">
+                          <span className="font-medium">Federal {filingStatus}:</span>{' '}
+                          <span className="font-bold text-indigo-700">{fmtUSD0(FED_STD_DED[filingStatus])}</span>
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-700">
+                          <span className="font-medium">California {filingStatus}:</span>{' '}
+                          <span className="font-bold text-indigo-700">{fmtUSD0(CA_STD_DED[filingStatus])}</span>
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -2355,7 +2367,7 @@ export default function ESOPCalculator() {
               </div>
 
               {/* Results Cards */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className={`grid gap-6 ${filingStatus === 'MFJ' ? 'grid-cols-3' : 'grid-cols-2'}`}>
                 {/* Annual Summary */}
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg p-6 border border-gray-100">
                   <div className="flex items-center justify-between mb-5">
@@ -2537,7 +2549,7 @@ export default function ESOPCalculator() {
                     </div>
                     <div className="mb-4 p-3 bg-pink-50 rounded-lg border border-pink-200">
                       <p className="text-xs text-pink-900 font-medium">
-                        Pay Frequency: <strong>{spousePayFreq}</strong> ({usTax.spouseOnly.periods} periods/year)
+                        Pay Frequency: <strong>{payFreq}</strong> ({usTax.spouseOnly.periods} periods/year)
                       </p>
                     </div>
                     <div className="space-y-2.5 text-sm mb-6">
@@ -2574,52 +2586,127 @@ export default function ESOPCalculator() {
                     </div>
 
                     {/* Spouse Bonus Estimate */}
-                    {usTax.spouseBonusEst && usTax.spouseBonusEst.bonusGross > 0 && (
-                      <div className="p-4 bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl border border-pink-200">
-                        <h4 className="font-semibold text-pink-900 mb-3 text-sm">Bonus — One-time Tax Estimate</h4>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Bonus (gross)</span>
-                            <span className="font-semibold">{fmtUSD0(usTax.spouseBonusEst.bonusGross)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Federal (≈ {usTax.spouseBonusEst.fedMarginalPct}%)</span>
-                            <span className="font-semibold text-red-600">-{fmtUSD0(usTax.spouseBonusEst.fedOnBonus)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">California (≈ {usTax.spouseBonusEst.caMarginalPct}%)</span>
-                            <span className="font-semibold text-red-600">-{fmtUSD0(usTax.spouseBonusEst.caOnBonus)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">FICA (all)</span>
-                            <span className="font-semibold text-red-600">
-                              -{fmtUSD0(usTax.spouseBonusEst.ssOnBonus + usTax.spouseBonusEst.medOnBonus + usTax.spouseBonusEst.addlMedOnBonus)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">CA SDI</span>
-                            <span className="font-semibold text-red-600">-{fmtUSD0(usTax.spouseBonusEst.sdiOnBonus)}</span>
-                          </div>
-                          <div className="h-px bg-pink-200 my-2"></div>
-                          <div className="flex justify-between font-bold">
-                            <span className="text-pink-900">Net Bonus (take-home)</span>
-                            <span className="text-pink-600">{fmtUSD0(usTax.spouseBonusEst.netBonus)}</span>
-                          </div>
+                    <div className="p-4 bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl border border-pink-200">
+                      <h4 className="font-semibold text-pink-900 mb-3 text-sm">Bonus — One-time Tax Estimate</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Bonus (gross)</span>
+                          <span className="font-semibold">{fmtUSD0(usTax.spouseBonusEst?.bonusGross || 0)}</span>
                         </div>
-                        <p className="text-xs text-pink-700/80 mt-3 bg-white/50 p-2 rounded">
-                          Estimated using current marginal rates. Employers may use supplemental withholding rules.
-                        </p>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Federal (≈ {usTax.spouseBonusEst?.fedMarginalPct || 0}%)</span>
+                          <span className="font-semibold text-red-600">-{fmtUSD0(usTax.spouseBonusEst?.fedOnBonus || 0)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">California (≈ {usTax.spouseBonusEst?.caMarginalPct || 0}%)</span>
+                          <span className="font-semibold text-red-600">-{fmtUSD0(usTax.spouseBonusEst?.caOnBonus || 0)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">FICA (all)</span>
+                          <span className="font-semibold text-red-600">
+                            -{fmtUSD0((usTax.spouseBonusEst?.ssOnBonus || 0) + (usTax.spouseBonusEst?.medOnBonus || 0) + (usTax.spouseBonusEst?.addlMedOnBonus || 0))}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">CA SDI</span>
+                          <span className="font-semibold text-red-600">-{fmtUSD0(usTax.spouseBonusEst?.sdiOnBonus || 0)}</span>
+                        </div>
+                        <div className="h-px bg-pink-200 my-2"></div>
+                        <div className="flex justify-between font-bold">
+                          <span className="text-pink-900">Net Bonus (take-home)</span>
+                          <span className="text-pink-600">{fmtUSD0(usTax.spouseBonusEst?.netBonus || 0)}</span>
+                        </div>
                       </div>
-                    )}
-
-                    <div className="mt-4 p-3 bg-pink-50 rounded-lg border border-pink-200">
-                      <p className="text-xs text-pink-900">
-                        <strong>401(k) Company Match:</strong> {fmtUSD0(usTax?.spouseMatchAnnual || 0)} / year (not taxed now)
+                      <p className="text-xs text-pink-700/80 mt-3 bg-white/50 p-2 rounded">
+                        Estimated using current marginal rates. Employers may use supplemental withholding rules.
                       </p>
                     </div>
                   </div>
                 )}
               </div>
+
+              {/* Annual Income Summary - Only for Income Tax Calculator */}
+              {activeTab === 'income-tax' && (
+                <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-2xl shadow-2xl p-8 text-white">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-2 h-10 bg-white rounded-full"></div>
+                    <h3 className="text-2xl font-bold">Annual Income Summary</h3>
+                  </div>
+
+                  {/* After-Tax Annual Income */}
+                  <div className="mb-6">
+                    <h4 className="text-sm text-indigo-200 mb-4 font-semibold uppercase tracking-wide">After-Tax Annual Income</h4>
+                    <div className={`grid gap-6 ${filingStatus === 'MFJ' ? 'grid-cols-3' : 'grid-cols-1'}`}>
+                      <div>
+                        <p className="text-sm text-indigo-200 mb-1">{filingStatus === 'MFJ' ? 'Your Income' : 'Net Income'}</p>
+                        <p className="text-2xl font-bold">{fmtUSD0(usTax.baseOnly?.netAnnual || 0)}</p>
+                      </div>
+                      {filingStatus === 'MFJ' && usTax.spouseOnly && (
+                        <>
+                          <div>
+                            <p className="text-sm text-indigo-200 mb-1">Spouse's Income</p>
+                            <p className="text-2xl font-bold">{fmtUSD0(usTax.spouseOnly?.netAnnual || 0)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-indigo-200 mb-1">Combined</p>
+                            <p className="text-2xl font-bold">{fmtUSD0(usTax.netAnnual)}</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* After-Tax Bonus */}
+                  <div className="bg-white/10 rounded-xl p-4 mb-6">
+                    <h4 className="text-sm text-indigo-100 mb-4 font-semibold uppercase tracking-wide">After-Tax Bonus (One-Time)</h4>
+                    <div className={`grid gap-6 ${filingStatus === 'MFJ' ? 'grid-cols-3' : 'grid-cols-1'}`}>
+                      <div>
+                        <p className="text-sm text-indigo-200 mb-1">{filingStatus === 'MFJ' ? 'Your Bonus' : 'Net Bonus'}</p>
+                        <p className="text-xl font-bold">{fmtUSD0(usTax.bonusEst?.netBonus || 0)}</p>
+                      </div>
+                      {filingStatus === 'MFJ' && usTax.spouseBonusEst && (
+                        <>
+                          <div>
+                            <p className="text-sm text-indigo-200 mb-1">Spouse's Bonus</p>
+                            <p className="text-xl font-bold">{fmtUSD0(usTax.spouseBonusEst?.netBonus || 0)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-indigo-200 mb-1">Combined</p>
+                            <p className="text-xl font-bold">{fmtUSD0((usTax.bonusEst?.netBonus || 0) + (usTax.spouseBonusEst?.netBonus || 0))}</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 401(k) Company Match */}
+                  <div className="bg-white/10 rounded-xl p-4">
+                    <h4 className="text-sm text-indigo-100 mb-4 font-semibold uppercase tracking-wide">401(k) Company Match (Annual)</h4>
+                    <div className={`grid gap-6 ${filingStatus === 'MFJ' ? 'grid-cols-3' : 'grid-cols-1'}`}>
+                      <div>
+                        <p className="text-sm text-indigo-200 mb-1">{filingStatus === 'MFJ' ? 'Your Match' : 'Company Match'}</p>
+                        <p className="text-xl font-bold">{fmtUSD0(usTax.matchAnnual || 0)}</p>
+                      </div>
+                      {filingStatus === 'MFJ' && (
+                        <>
+                          <div>
+                            <p className="text-sm text-indigo-200 mb-1">Spouse's Match</p>
+                            <p className="text-xl font-bold">{fmtUSD0(usTax.spouseMatchAnnual || 0)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-indigo-200 mb-1">Combined</p>
+                            <p className="text-xl font-bold">{fmtUSD0((usTax.matchAnnual || 0) + (usTax.spouseMatchAnnual || 0))}</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-indigo-200 mt-4 bg-white/10 p-3 rounded-lg">
+                    <strong>Note:</strong> 401(k) company match is not taxed when contributed but will be taxed upon withdrawal in retirement.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
